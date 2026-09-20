@@ -24,6 +24,8 @@ public class MerchantAlias {
     @JoinColumn(name = "merchant_id")
     private Merchant merchant;
 
+    private String raw_pattern;
+
     private Instant created_at;
     private Instant updated_at;
 
