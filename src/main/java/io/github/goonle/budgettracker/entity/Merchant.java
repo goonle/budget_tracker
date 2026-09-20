@@ -23,8 +23,8 @@ public class Merchant {
     private Long id;
 
     private String name;
-    private Instant created_at;
-    private Instant updated_at;
+    private Instant createdAt;
+    private Instant updatedAt;
 
     @ManyToOne
     @JoinColumn(name = "default_category_id")

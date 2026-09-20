@@ -20,12 +20,12 @@ public class User {
     @SequenceGenerator(name="user_seq", sequenceName="user_id_seq", allocationSize=1)
     private Long id;
 
-    private String account_id;
-    private String hash_password;
+    private String accountId;
+    private String hashPassword;
 
-    private String user_name;
-    private Instant created_at;
-    private Instant updated_at;
+    private String userName;
+    private Instant createdAt;
+    private Instant updatedAt;
     
     @OneToMany(mappedBy="user")
     private List<Transaction> transactions;

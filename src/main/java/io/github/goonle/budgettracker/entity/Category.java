@@ -32,8 +32,8 @@ public class Category {
     @OneToMany(mappedBy = "parent")
     private List<Category> children;
 
-    private Instant created_at;
-    private Instant updated_at;
+    private Instant createdAt;
+    private Instant updatedAt;
 
     @OneToMany(mappedBy="category")
     private List<Transaction> transaction;

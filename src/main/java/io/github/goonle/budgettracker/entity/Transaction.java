@@ -41,13 +41,13 @@ public class Transaction {
 
     private String note;
 
-    private String raw_hash;
+    private String rawHash;
 
-    private int week_number;
-    private int month_number;
-    private int year_number;
+    private int weekNumber;
+    private int monthNumber;
+    private int yearNumber;
 
-    private Instant created_at;
-    private Instant updated_at;
+    private Instant createdAt;
+    private Instant updatedAt;
 
 }
