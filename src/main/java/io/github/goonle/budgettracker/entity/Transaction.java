@@ -6,6 +6,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
+import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.JoinColumn;
 import lombok.Getter;
@@ -16,7 +17,8 @@ import lombok.Setter;
 @Setter
 public class Transaction {
     @Id
-    @GeneratedValue(strategy=GenerationType.SEQUENCE)
+    @GeneratedValue(strategy=GenerationType.SEQUENCE, generator="transaction_seq")
+    @SequenceGenerator(name="transaction_seq", sequenceName="transaction_id_seq", allocationSize=1)
     private Long id;
 
     @ManyToOne
