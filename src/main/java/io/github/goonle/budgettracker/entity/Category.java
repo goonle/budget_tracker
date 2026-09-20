@@ -36,7 +36,7 @@ public class Category {
     private Instant updatedAt;
 
     @OneToMany(mappedBy="category")
-    private List<Transaction> transaction;
+    private List<Transaction> transactions;
 
     @OneToMany(mappedBy="defaultCategory")
     private List<Merchant> merchants;
