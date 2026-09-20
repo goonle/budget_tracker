@@ -16,7 +16,7 @@ import lombok.Setter;
 public class MerchantAlias {
     @Id
     @GeneratedValue(strategy=GenerationType.SEQUENCE)
-    private int id;
+    private Long id;
 
     @ManyToOne
     @JoinColumn(name = "merchant_id")

@@ -18,7 +18,7 @@ import lombok.Setter;
 public class Merchant {
     @Id
     @GeneratedValue(strategy=GenerationType.SEQUENCE)
-    private int id;
+    private Long id;
 
     private String name;
     private Instant created_at;
