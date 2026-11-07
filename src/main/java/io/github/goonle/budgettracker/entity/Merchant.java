@@ -3,6 +3,7 @@ package io.github.goonle.budgettracker.entity;
 import java.time.Instant;
 import java.util.List;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -34,7 +35,7 @@ public class Merchant {
     @UpdateTimestamp
     private Instant updatedAt;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "default_category_id")
     private Category defaultCategory;
 

@@ -89,5 +89,5 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
         nativeQuery = true)
     List<Category> findParentAndChildById(@Param("id") Long id);
 
-    List<Category> findByParentId(@Param("id") Long id);
+    List<Category> findByParentId(Long parentId);
 }

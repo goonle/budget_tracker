@@ -3,6 +3,7 @@ package io.github.goonle.budgettracker.entity;
 import java.time.Instant;
 import java.util.List;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.SequenceGenerator;
@@ -28,7 +29,7 @@ public class Category {
     private String name;
     private int depth;
     
-    @ManyToOne 
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="parent_id")
     private Category parent;
 
