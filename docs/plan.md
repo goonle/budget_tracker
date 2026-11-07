@@ -29,6 +29,8 @@ Last updated: 2026-11-08
 | React later is built into Spring `static/` (one jar, same domain) | No CORS, the session login keeps working, and it fits the Docker/VM deploy. |
 | Postgres via Testcontainers for repository tests, not H2 | `CategoryRepository` uses recursive CTEs and `ARRAY`, which only Postgres supports. |
 | Money is a `long` in cents. Parse with `BigDecimal`, never `double`. | No rounding errors. |
+| All `@ManyToOne` are LAZY. Build DTOs inside `@Transactional` service methods. | Avoids loading whole parent chains. Lazy fields can't be read after the transaction ends. |
+| Card numbers in a separate `member_card` table (planned) | A member can have several cards, and cards get replaced. Unique per user, not globally. |
 
 ### Test conventions
 
@@ -68,22 +70,33 @@ Changes from the spreadsheet:
 - "Daily" and "Luxury" describe why you bought something, not what it was, so they became Household and Big purchases.
 - "Not spending" keeps bank credits out of spending totals.
 
-## Known bugs (found 2026-11-08)
+## Bug fixes (found and fixed 2026-11-08)
 
-- [ ] `.github/workflow/` must be `.github/workflows/`. CI never triggers.
-- [ ] Flyway is missing from `build.gradle` (`spring-boot-starter-flyway` + `flyway-database-postgresql`). With `ddl-auto: validate` the app won't start on an empty database.
-- [ ] `V1__init.sql`: `transaction` references `merchant` before it exists. Table order should be app_user, member, category, merchant, merchant_alias, transaction.
-- [ ] `V1__init.sql` doesn't match the entities:
-  - transaction: `user_id`/`type`/`cent INT` versus `member_id`/`rawType`/`amountCents long`/`occurrenceNo`.
-  - app_user: `username`/`password_hash` versus `accountId`/`hashPassword`/`userName`.
-- [ ] `AppUser.transactions` uses `mappedBy="user"`, but `Transaction` has no `user` field. Hibernate fails at boot.
-- [ ] `AppUserRepository.findByUsername` doesn't match the field `userName`.
-- [ ] Testcontainers dependencies are missing (`spring-boot-testcontainers`, `testcontainers-postgresql`, `testcontainers-junit-jupiter`). The test class also needs `@Testcontainers`.
-- [ ] The README says Maven and Cloud Run. The project actually uses Gradle and a GCP VM with docker compose.
+Status: fixed in code and committed. The code compiles, but `./gradlew test` hasn't run yet because Docker wasn't running.
+
+- [x] `.github/workflow/` renamed to `.github/workflows/` so CI triggers.
+- [x] Added `spring-boot-starter-flyway` + `flyway-database-postgresql` so V1 runs at startup.
+- [x] Added `spring-boot-testcontainers`, `testcontainers-postgresql`, `testcontainers-junit-jupiter`, and `@Testcontainers` on the test class.
+- [x] `V1__init.sql`: tables reordered (app_user, member, category, merchant, merchant_alias, transaction).
+- [x] `V1__init.sql`: `transaction` columns now match the entity: `user_id → app_user`, `member_id → member`, `raw_type`, `amount_cents BIGINT`, `occurrence_no`, and `UNIQUE (user_id, raw_line, occurrence_no)`.
+- [x] `member.card_last4` changed from `CHAR(4)` to `VARCHAR(4)` with `CHECK (^[0-9]{4}$)`, because Hibernate validation rejects CHAR for a String.
+- [x] `AppUser`: fields `username` and `passwordHash` match the columns. `accountId` removed.
+- [x] `Transaction.user` added, so `AppUser.transactions` (`mappedBy="user"`) works.
+- [x] `AppUserRepository.findByUsername` returns `Optional<AppUser>`.
+- [x] `@CreationTimestamp` / `@UpdateTimestamp` in all entities. Without them Hibernate inserted NULL into the NOT NULL timestamp columns.
+- [x] `@ManyToOne` is LAZY everywhere. `findByParentId` no longer has an unneeded `@Param`.
+- [x] README: Gradle and the VM deploy, plus Flyway and Testcontainers rows.
+
+### Still to verify
+- [ ] `./gradlew test` passes, which runs Flyway V1 plus Hibernate `validate`. Watch for `Instant` ↔ `TIMESTAMPTZ`.
+
+### Known gaps (not fixed yet)
+- [ ] Local run: a `.env` exists (gitignored), but Spring Boot doesn't read `.env` by itself. It works when something loads it (the VS Code launch config's `envFile`, or `docker compose`). `./gradlew bootRun` won't see it.
+- [ ] Deploy docs: `docker-compose.yml` exists on the VM (with `JAVA_OPTS=-Xmx384m`) but isn't in the repo or in `docs/infra.md`. Add a copy without secrets so the VM can be rebuilt.
 
 ## Roadmap (epics)
 
-- **E0 Foundation & CI**: fix the bugs above. Write tests for the 4 `CategoryRepository` methods. First deploy dry run: VM compose file and `.env`, GHCR login, JVM memory limit for e2-micro.
+- **E0 Foundation & CI**: ~~fix the bugs~~ (done). Run `./gradlew test`. Add the `member_card` table. Write tests for the 4 `CategoryRepository` methods. Local run profile. First deploy dry run: VM compose file and `.env`, GHCR login, JVM memory limit.
 - **E1 Categories**: finalise the tree, seed migration, `UNIQUE(parent_id, name)`, `CategoryService`, `GET /api/categories`.
 - **E2 CSV import**: sample CSV fixtures, a parser for each bank format (use a CSV library), line numbering, hashing, occurrence counting, staging tables, upload endpoint.
 - **E3 Merchant matching**: description normaliser, alias matcher (exact match, then longest prefix), merchant/alias admin, learning from corrections.
@@ -99,3 +112,4 @@ Planning board (private): https://claude.ai/artifact/P9GeXPsDUbH64YWBnGSXnR
 - Which bank's CSV format comes first?
 - Is the occurrence-number rule above what was meant by checking that lines are continuous?
 - Should categories be shared by all users, or should each user have their own?
+- Should `transaction` also store `card_last4`, so rows can be back-filled when a card is added later?
