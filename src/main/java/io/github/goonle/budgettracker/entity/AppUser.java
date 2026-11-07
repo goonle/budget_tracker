@@ -2,12 +2,15 @@ package io.github.goonle.budgettracker.entity;
 
 import java.time.Instant;
 import java.util.List;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.OneToMany;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -20,11 +23,14 @@ public class AppUser {
     @SequenceGenerator(name="app_user_seq", sequenceName="app_user_id_seq", allocationSize=1)
     private Long id;
 
-    private String accountId;
-    private String hashPassword;
+    private String username;
+    private String passwordHash;
 
-    private String userName;
+    @CreationTimestamp
+    @Column(updatable = false)
     private Instant createdAt;
+
+    @UpdateTimestamp
     private Instant updatedAt;
     
     @OneToMany(mappedBy="user")

@@ -13,7 +13,7 @@ CREATE TABLE
     member (
         id BIGSERIAL PRIMARY KEY,
         name VARCHAR NOT NULL,
-        card_last4 CHAR(4) NOT NULL UNIQUE,
+        card_last4 VARCHAR(4) NOT NULL UNIQUE CHECK (card_last4 ~ '^[0-9]{4}$'),
         created_at TIMESTAMPTZ NOT NULL DEFAULT now (),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT now ()
     );

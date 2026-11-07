@@ -18,7 +18,7 @@ The goal isn't to prove I can avoid AI. It's to make sure I still know what I'm 
 
 - **Language**: Java 25 (LTS)
 - **Framework**: Spring Boot 4.1.1
-- **Build tool**: Maven
+- **Build tool**: Gradle
 - **Database**: PostgreSQL
 - **Packaging**: JAR (standalone, embedded Tomcat)
 
@@ -33,8 +33,10 @@ The goal isn't to prove I can avoid AI. It's to make sure I still know what I'm 
 | Lombok | Removes boilerplate (getters/setters/constructors) |
 | Spring Boot Configuration Processor | Autocomplete for custom `application.yml` properties |
 | SpringDoc OpenAPI | Auto-generated API documentation |
-| Spring Boot Actuator | Health-check endpoints for container monitoring (Cloud Run) |
+| Spring Boot Actuator | Health-check endpoint used by the deploy script to confirm the app is up |
 | Spring Boot DevTools | Auto-restart on code changes during development |
+| Flyway | Versioned database migrations (`db/migration/V*.sql`), applied at startup |
+| Testcontainers | Runs a real PostgreSQL in Docker for tests (the category queries are Postgres-only) |
 
 ## Key Design Decisions
 
@@ -45,9 +47,9 @@ A few decisions worth calling out up front (full rationale for each will live in
 - Recurring payment amounts are tracked with a **history table**, so a price increase (e.g. gym membership going up) doesn't silently distort past budget calculations.
 - Frequently repeated transactions (same merchant) can be auto-categorized via a **merchant mapping table**, learned from past manual categorization — reducing repetitive manual entry without needing fuzzy matching.
 
-## Deployment (planned)
+## Deployment (set up, not yet tested)
 
-GCP Cloud Run + GitHub Actions + Workload Identity Federation + Secret Manager.
+GCP Compute Engine VM (e2-micro) running Docker Compose. On every push to `main`, GitHub Actions runs the tests, builds a Docker image, pushes it to GitHub Container Registry and deploys it to the VM over SSH. VM setup: [docs/infra.md](docs/infra.md).
 
 ## License
 

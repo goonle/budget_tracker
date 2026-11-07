@@ -8,6 +8,9 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Column;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -26,7 +29,11 @@ public class MerchantAlias {
 
     private String rawPattern;
 
+    @CreationTimestamp
+    @Column(updatable = false)
     private Instant createdAt;
+
+    @UpdateTimestamp
     private Instant updatedAt;
 
 }

@@ -10,6 +10,9 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Column;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -32,7 +35,11 @@ public class Category {
     @OneToMany(mappedBy = "parent")
     private List<Category> children;
 
+    @CreationTimestamp
+    @Column(updatable = false)
     private Instant createdAt;
+
+    @UpdateTimestamp
     private Instant updatedAt;
 
     @OneToMany(mappedBy="category")

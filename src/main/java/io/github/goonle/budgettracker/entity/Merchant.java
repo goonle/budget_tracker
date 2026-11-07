@@ -10,6 +10,9 @@ import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Column;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -23,7 +26,12 @@ public class Merchant {
     private Long id;
 
     private String name;
+
+    @CreationTimestamp
+    @Column(updatable = false)
     private Instant createdAt;
+
+    @UpdateTimestamp
     private Instant updatedAt;
 
     @ManyToOne
