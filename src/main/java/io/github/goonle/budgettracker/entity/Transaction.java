@@ -52,6 +52,9 @@ public class Transaction {
     private String rawLine;
     private int occurrenceNo;
 
+    @Column(name = "card_last4", length = 4)
+    private String cardLast4;
+
     @CreationTimestamp
     @Column(updatable = false)
     private Instant createdAt;
