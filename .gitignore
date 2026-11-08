@@ -38,3 +38,9 @@ out/
 
 ### env
 .env
+
+### ssh keys ###
+gh-deploy*
+
+### claude code (personal settings) ###
+.claude/settings.local.json

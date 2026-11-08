@@ -81,7 +81,7 @@ jobs:
           envs: IMAGE_TAG
           script: |
             set -e
-            cd /opt/budget
+            cd /opt/budgettracker
             export IMAGE_TAG
             docker compose pull app
             docker compose up -d app

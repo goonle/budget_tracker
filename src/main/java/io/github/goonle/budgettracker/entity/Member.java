@@ -1,6 +1,8 @@
 package io.github.goonle.budgettracker.entity;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -20,6 +22,10 @@ public class Member {
     @Column(name = "card_last4")
     private String cardLast4;
 
+    @CreationTimestamp
+    @Column(updatable = false)
     private Instant createdAt;
+
+    @UpdateTimestamp
     private Instant updatedAt;
 }
