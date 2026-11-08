@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.Instant;
+import java.util.List;
 
 @Entity
 @Getter
@@ -17,10 +18,14 @@ public class Member {
     @SequenceGenerator(name = "member_seq", sequenceName = "member_id_seq", allocationSize = 1)
     private Long id;
 
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
+    private AppUser user;
+
     private String name;
 
-    @Column(name = "card_last4")
-    private String cardLast4;
+    @OneToMany(mappedBy = "member")
+    private List<MemberCard> cards;
 
     @CreationTimestamp
     @Column(updatable = false)
