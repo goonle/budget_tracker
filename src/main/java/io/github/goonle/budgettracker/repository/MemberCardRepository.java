@@ -6,5 +6,4 @@ import java.util.Optional;
 
 public interface MemberCardRepository extends JpaRepository<MemberCard, Long> {
     Optional<MemberCard> findByUserIdAndCardLast4(Long userId, String cardLast4);
-    Optional<MemberCard> findByUserId(String cardLast4);
 }
