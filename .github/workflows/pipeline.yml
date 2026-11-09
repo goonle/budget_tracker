@@ -87,7 +87,7 @@ jobs:
             docker compose up -d app
 
             # Health check: maximum 150 seconds to wait (Spring Boot startup can be slow on e2-micro)
-            for i in $(seq 1 30); do
+            for i in $(seq 1 60); do
               if curl -fsS http://localhost:8080/actuator/health | grep -q '"UP"'; then
                 echo "Deployed $IMAGE_TAG"
                 docker image prune -af      # clean up old images (protects 30GB disk space)
