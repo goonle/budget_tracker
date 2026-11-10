@@ -1,7 +1,7 @@
 # Project plan & working notes
 
 Read this first when picking the project back up (human or AI).
-Last updated: 2026-11-08
+Last updated: 2026-11-10
 
 ## Working rules
 
@@ -30,7 +30,10 @@ Last updated: 2026-11-08
 | Postgres via Testcontainers for repository tests, not H2 | `CategoryRepository` uses recursive CTEs and `ARRAY`, which only Postgres supports. |
 | Money is a `long` in cents. Parse with `BigDecimal`, never `double`. | No rounding errors. |
 | All `@ManyToOne` are LAZY. Build DTOs inside `@Transactional` service methods. | Avoids loading whole parent chains. Lazy fields can't be read after the transaction ends. |
-| Card numbers in a separate `member_card` table (planned) | A member can have several cards, and cards get replaced. Unique per user, not globally. |
+| Card numbers in a separate `member_card` table (V2) | A member can have several cards, and cards get replaced. Unique per user, not globally. |
+| `transaction.card_last4` (nullable) is kept even when no member is assigned | Show "•••• 1234" for unknown cards. Back-fill `member_id` with one query once the card is assigned. Unassigned cards are asked about again on each import. |
+| Categories are seeded by a Flyway migration (V3). Names are unique per parent. | Every database (local, tests, VM) gets the same tree. |
+| Database is Neon (managed Postgres), not a container on the VM | Keeps the e2-micro's 1 GB for the app. |
 
 ### Test conventions
 
@@ -51,24 +54,20 @@ Last updated: 2026-11-08
   - Warn when the date ranges overlap but no rows matched (different account or changed bank format).
   - Report gaps in `line_no`, which are lines that failed to parse, so none are dropped silently.
 
-## Proposed category tree (not final)
+## Category tree (seeded in V3)
 
 ```
-Housing        Rent · Utilities (Water, Gas & Electricity) · Internet · Mobile
-Food           Groceries · Eating out · Alcohol
-Transport      Fuel · Car insurance · Car maintenance · Parking & tolls · Public transport
-Shopping       Household · Clothing · Big purchases
-Leisure        Hobbies (Lego) · Travel · Activities · Social
-Health & care  Gym · Health insurance · Medical · Beauty
-Growth         Education
-Not spending   Income · Transfer between own accounts · Refund
+Living         Rent · Power · Wifi · Mobile
+Food           Grocery · Outside Food · Alcohol
+Shopping       Household · Personal
+Car            Petrol · Car Insurance · Rego · WOF
+Lifestyle      Travel · Activity · Social · Education
+Health         Health Insurance · Treatment · Beauty
+Not spending   Income · Transfer · Refund
 Uncategorised
 ```
 
-Changes from the spreadsheet:
-- The two "Insurance" columns are split by parent.
-- "Daily" and "Luxury" describe why you bought something, not what it was, so they became Household and Big purchases.
-- "Not spending" keeps bank credits out of spending totals.
+"Not spending" keeps bank credits out of spending totals. "Uncategorised" holds rows that match no merchant.
 
 ## Bug fixes (found and fixed 2026-11-08)
 
@@ -79,7 +78,7 @@ Status: fixed in code and committed. The code compiles, but `./gradlew test` has
 - [x] Added `spring-boot-testcontainers`, `testcontainers-postgresql`, `testcontainers-junit-jupiter`, and `@Testcontainers` on the test class.
 - [x] `V1__init.sql`: tables reordered (app_user, member, category, merchant, merchant_alias, transaction).
 - [x] `V1__init.sql`: `transaction` columns now match the entity: `user_id → app_user`, `member_id → member`, `raw_type`, `amount_cents BIGINT`, `occurrence_no`, and `UNIQUE (user_id, raw_line, occurrence_no)`.
-- [x] `member.card_last4` changed from `CHAR(4)` to `VARCHAR(4)` with `CHECK (^[0-9]{4}$)`, because Hibernate validation rejects CHAR for a String.
+- [x] `member.card_last4` changed from `CHAR(4)` to `VARCHAR(4)` with `CHECK (^[0-9]{4}$)`, because Hibernate validation rejects CHAR for a String. (Moved to `member_card` in V2.)
 - [x] `AppUser`: fields `username` and `passwordHash` match the columns. `accountId` removed.
 - [x] `Transaction.user` added, so `AppUser.transactions` (`mappedBy="user"`) works.
 - [x] `AppUserRepository.findByUsername` returns `Optional<AppUser>`.
@@ -88,21 +87,23 @@ Status: fixed in code and committed. The code compiles, but `./gradlew test` has
 - [x] README: Gradle and the VM deploy, plus Flyway and Testcontainers rows.
 
 ### Still to verify
-- [ ] `./gradlew test` passes, which runs Flyway V1 plus Hibernate `validate`. Watch for `Instant` ↔ `TIMESTAMPTZ`.
+- [ ] `./gradlew test` passes, which runs Flyway V1–V3, Hibernate `validate`, and 14 tests (`BudgettrackerApplicationTests`, `CategoryRepositoryTest`, `MemberCardRepositoryTest`). Watch for `Instant` ↔ `TIMESTAMPTZ`.
+- [ ] Neon runs PostgreSQL 15+ (V3 uses `UNIQUE NULLS NOT DISTINCT`).
+- [ ] The VM's `/opt/budgettracker/docker-compose.yml` matches `deploy/docker-compose.yml`, and the VM `.env` has `DB_URL`, `DB_USER`, `DB_PASSWORD`.
 
 ### Known gaps (not fixed yet)
 - [ ] Local run: a `.env` exists (gitignored), but Spring Boot doesn't read `.env` by itself. It works when something loads it (the VS Code launch config's `envFile`, or `docker compose`). `./gradlew bootRun` won't see it.
-- [ ] Deploy docs: `docker-compose.yml` exists on the VM (with `JAVA_OPTS=-Xmx384m`) but isn't in the repo or in `docs/infra.md`. Add a copy without secrets so the VM can be rebuilt.
+- [x] Deploy docs: `deploy/docker-compose.yml` and `deploy/.env.example` are in the repo, and the VM setup steps are in `docs/infra.md`.
 
 ## Roadmap (epics)
 
-- **E0 Foundation & CI**: ~~fix the bugs~~ (done). Run `./gradlew test`. Add the `member_card` table. Write tests for the 4 `CategoryRepository` methods. Local run profile. First deploy dry run: VM compose file and `.env`, GHCR login, JVM memory limit.
-- **E1 Categories**: finalise the tree, seed migration, `UNIQUE(parent_id, name)`, `CategoryService`, `GET /api/categories`.
+- **E0 Foundation & CI**: ~~fix the bugs~~, ~~`member_card` table (V2)~~, ~~repository tests written~~, ~~deploy docs~~ (done). Left: run `./gradlew test`, local run profile, confirm the first deploy.
+- **E1 Categories**: ~~tree, seed migration, `UNIQUE(parent_id, name)` (V3)~~ (done). Left: `CategoryService`, `GET /api/categories`.
 - **E2 CSV import**: sample CSV fixtures, a parser for each bank format (use a CSV library), line numbering, hashing, occurrence counting, staging tables, upload endpoint.
 - **E3 Merchant matching**: description normaliser, alias matcher (exact match, then longest prefix), merchant/alias admin, learning from corrections.
 - **E4 Review & save**: preview page, row editing, duplicate detection, continuity check, idempotent save.
 - **E5 Reports**: transaction list with category and subcategory filters, weekly summary like the spreadsheet, Goal/Net with a budget-goal history table, weekly normalisation of recurring payments.
-- **E6 Accounts & security**: single-user mode first, then Spring Security with BCrypt. Make `card_last4` unique per user. HTTPS on the VM before any real bank data goes on it.
+- **E6 Accounts & security**: single-user mode first, then Spring Security with BCrypt. HTTPS on the VM before any real bank data goes on it.
 - **E7 Move to React**: replace `web/view` and the templates only.
 
 Planning board (private): https://claude.ai/artifact/P9GeXPsDUbH64YWBnGSXnR
@@ -112,4 +113,3 @@ Planning board (private): https://claude.ai/artifact/P9GeXPsDUbH64YWBnGSXnR
 - Which bank's CSV format comes first?
 - Is the occurrence-number rule above what was meant by checking that lines are continuous?
 - Should categories be shared by all users, or should each user have their own?
-- Should `transaction` also store `card_last4`, so rows can be back-filled when a card is added later?
