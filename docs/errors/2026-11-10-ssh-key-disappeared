@@ -1,0 +1,43 @@
+# Deploy SSH key keeps disappearing (GCP VM)
+
+- Date: 2026-11-09
+- Where: GitHub Actions, `deploy` job → GCP VM
+
+## Symptom
+
+```
+ssh: handshake failed: ssh: unable to authenticate, attempted methods [none publickey], no supported methods remain
+```
+
+I added the deploy public key to `~/.ssh/authorized_keys`, but it disappeared after a few minutes.
+
+## Cause
+
+GCP's Guest Agent manages `authorized_keys` using the SSH keys in the VM metadata.
+When the metadata changes (for example, when the console SSH button adds or removes a temporary key), it rewrites the file and removes my key.
+
+## Solution
+
+Put the deploy key in a separate file and make SSH read both files.
+
+```bash
+echo 'ssh-ed25519 AAAA... github-actions-deploy' > ~/.ssh/authorized_keys_deploy
+chmod 600 ~/.ssh/authorized_keys_deploy
+
+echo 'AuthorizedKeysFile .ssh/authorized_keys .ssh/authorized_keys_deploy' \
+  | sudo tee /etc/ssh/sshd_config.d/10-deploy-keys.conf
+
+sudo sshd -t
+sudo systemctl reload ssh
+```
+
+## Verification
+
+```bash
+sudo sshd -T | grep -i authorizedkeysfile
+# → authorizedkeysfile .ssh/authorized_keys .ssh/authorized_keys_deploy
+```
+
+## Lessons learned
+
+If two programs manage the same file, give each one its own file.
