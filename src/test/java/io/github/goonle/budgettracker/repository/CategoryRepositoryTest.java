@@ -24,12 +24,13 @@ class CategoryRepositoryTest {
 
     @BeforeEach
     void setUp() {
-        housing   = category("Housing", null);
+        // "T-" prefix: top-level names must not clash with the seeded categories (V3).
+        housing   = category("T-Housing", null);
         utilities = category("Utilities", housing);
         water     = category("Water", utilities);
         gas       = category("Gas", utilities);
         rent      = category("Rent", housing);
-        food      = category("Food", null);
+        food      = category("T-Food", null);
         groceries = category("Groceries", food);
         em.clear(); // make the repository read from the database, not the cache
     }
@@ -37,13 +38,13 @@ class CategoryRepositoryTest {
     @Test
     void findAncestryById_leaf_returnsRootToSelfInDepthOrder() {
         assertThat(names(repository.findAncestryById(water.getId())))
-                .containsExactly("Housing", "Utilities", "Water");
+                .containsExactly("T-Housing", "Utilities", "Water");
     }
 
     @Test
     void findAncestryById_root_returnsOnlyItself() {
         assertThat(names(repository.findAncestryById(housing.getId())))
-                .containsExactly("Housing");
+                .containsExactly("T-Housing");
     }
 
     @Test
@@ -60,7 +61,7 @@ class CategoryRepositoryTest {
     @Test
     void findParentAndChildById_middle_returnsAncestorsSelfAndDescendants() {
         assertThat(names(repository.findParentAndChildById(utilities.getId())))
-                .containsExactly("Housing", "Utilities", "Water", "Gas");
+                .containsExactly("T-Housing", "Utilities", "Water", "Gas");
     }
 
     @Test
