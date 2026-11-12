@@ -13,6 +13,10 @@ spring:
   flyway:
     enabled: true
 
+app:
+  single-user:
+    username: owner   # all data belongs to this user until login exists (E6)
+
 management:
   endpoints:
     web:

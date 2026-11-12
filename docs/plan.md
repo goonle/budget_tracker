@@ -1,7 +1,7 @@
 # Project plan & working notes
 
 Read this first when picking the project back up (human or AI).
-Last updated: 2026-11-10
+Last updated: 2026-11-12
 
 ## Working rules
 
@@ -71,7 +71,7 @@ Uncategorised
 
 ## Bug fixes (found and fixed 2026-11-08)
 
-Status: fixed in code and committed. The code compiles, but `./gradlew test` hasn't run yet because Docker wasn't running.
+Status: fixed, committed and verified by `./gradlew test` (2026-11-11).
 
 - [x] `.github/workflow/` renamed to `.github/workflows/` so CI triggers.
 - [x] Added `spring-boot-starter-flyway` + `flyway-database-postgresql` so V1 runs at startup.
@@ -87,9 +87,10 @@ Status: fixed in code and committed. The code compiles, but `./gradlew test` has
 - [x] README: Gradle and the VM deploy, plus Flyway and Testcontainers rows.
 
 ### Still to verify
-- [ ] `./gradlew test` passes, which runs Flyway V1–V3, Hibernate `validate`, and 14 tests (`BudgettrackerApplicationTests`, `CategoryRepositoryTest`, `MemberCardRepositoryTest`). Watch for `Instant` ↔ `TIMESTAMPTZ`.
-- [ ] Neon runs PostgreSQL 15+ (V3 uses `UNIQUE NULLS NOT DISTINCT`).
-- [ ] The VM's `/opt/budgettracker/docker-compose.yml` matches `deploy/docker-compose.yml`, and the VM `.env` has `DB_URL`, `DB_USER`, `DB_PASSWORD`.
+- [x] `./gradlew test` passes: 18 tests, Flyway V1–V3 on Postgres 17 (2026-11-11).
+- [x] Neon runs PostgreSQL 18 (V3 needs 15+ for `UNIQUE NULLS NOT DISTINCT`).
+- [x] CD works: push to `main` → test → image → deploy to the VM (2026-11-12).
+- [ ] Tests use `postgres:17` but Neon is 18. Switch tests to `postgres:18`, in one place (`TestcontainersConfiguration`).
 
 ### Known gaps (not fixed yet)
 - [ ] Local run: a `.env` exists (gitignored), but Spring Boot doesn't read `.env` by itself. It works when something loads it (the VS Code launch config's `envFile`, or `docker compose`). `./gradlew bootRun` won't see it.
@@ -97,8 +98,8 @@ Status: fixed in code and committed. The code compiles, but `./gradlew test` has
 
 ## Roadmap (epics)
 
-- **E0 Foundation & CI**: ~~fix the bugs~~, ~~`member_card` table (V2)~~, ~~repository tests written~~, ~~deploy docs~~ (done). Left: run `./gradlew test`, local run profile, confirm the first deploy.
-- **E1 Categories**: ~~tree, seed migration, `UNIQUE(parent_id, name)` (V3)~~ (done). Left: `CategoryService`, `GET /api/categories`.
+- **E0 Foundation & CI**: ~~fix the bugs~~, ~~`member_card` table (V2)~~, ~~repository tests~~, ~~deploy docs~~, ~~tests green~~, ~~first deploy~~ (done). Left: local run profile, tests on `postgres:18`.
+- **E1 Categories**: ~~tree, seed migration, `UNIQUE(parent_id, name)` (V3)~~, ~~`CategoryService`, `GET /api/categories` with tests~~ (done). Left: a category page (with E4).
 - **E2 CSV import**: sample CSV fixtures, a parser for each bank format (use a CSV library), line numbering, hashing, occurrence counting, staging tables, upload endpoint.
 - **E3 Merchant matching**: description normaliser, alias matcher (exact match, then longest prefix), merchant/alias admin, learning from corrections.
 - **E4 Review & save**: preview page, row editing, duplicate detection, continuity check, idempotent save.
