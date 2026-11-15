@@ -44,6 +44,7 @@ gh-deploy*
 
 ### claude code (personal settings) ###
 .claude/settings.local.json
+CLAUDE.local.md
 
 ### real bank exports (never commit) ###
 sample/

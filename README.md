@@ -1,55 +1,68 @@
 # Household Budget Tracker
 
-A personal budget tracker, rebuilt from a spreadsheet into a web app — core logic hand-coded and deliberately designed, with AI used only for boilerplate and review.
+A personal budget tracker, rebuilt from a spreadsheet into a web app. I design it and review every change; an AI coding assistant writes much of the code under that direction.
 
 ## Motivation
 
-I've been tracking my household budget in a spreadsheet for a while now, with weekly rows and category columns. This project moves that into a proper web app.
+I've been tracking my household budget in a spreadsheet for a while now, with weekly rows and category columns. This project moves that into a proper web app: upload a bank CSV export, check the suggested categories, and save it without creating duplicates.
 
-There's also a second reason behind this project. AI coding tools have made it easy to ship features fast without fully understanding what's being built — "vibe coding," where you accept whatever the AI outputs without stopping to ask why. This project is a deliberate step in the other direction: every design decision (category structure, how recurring payments are normalized, how price changes are tracked over time) is reasoned through before it's implemented, and the core logic is written by hand. AI is used where it actually makes sense — boilerplate, code review, looking up unfamiliar APIs — not as a substitute for understanding my own code.
+There's also a second reason behind this project. AI coding tools have made it easy to ship features fast without fully understanding what's being built — "vibe coding," where you accept whatever the AI outputs without stopping to ask why. This project uses AI (Claude Code), but on a short leash:
 
-The goal isn't to prove I can avoid AI. It's to make sure I still know what I'm doing without it.
+- Every design decision (table structure, duplicate rule, category tree) is discussed and decided by me before any code is written.
+- The AI shows each change as a diff and explains why; nothing lands in the repo without my explicit approval.
+- I review and commit every change myself, one small step at a time.
+- Decisions, bugs and the roadmap are recorded in [docs/plan.md](docs/plan.md).
+
+The goal isn't to avoid AI. It's to make sure I still understand every line of my own code.
 
 ## Status
 
-🚧 Project setup phase — repository initialized, tech stack and dependencies finalized. Implementation in progress.
+🚧 Foundation done — database schema, migrations, tests and CI/CD are working, and the app is deployed. Currently building **CSV import** (ANZ NZ format first).
 
 ## Tech Stack
 
 - **Language**: Java 25 (LTS)
 - **Framework**: Spring Boot 4.1.1
-- **Build tool**: Gradle
-- **Database**: PostgreSQL
-- **Packaging**: JAR (standalone, embedded Tomcat)
+- **Build tool**: Gradle 9.7.1
+- **Database**: PostgreSQL 18 (Neon in production, Testcontainers in tests)
+- **Frontend**: Thymeleaf pages planned first, React later (the REST API is kept separate for that)
+- **Packaging**: JAR in a Docker image
 
 ### Dependencies
 
 | Dependency | Why |
 |---|---|
-| Spring Web | Core for building the REST API — Controller layer via MVC pattern |
-| Spring Data JPA | Abstracts the DB access layer via Entity-Repository pattern |
-| PostgreSQL Driver | Relational DB, well suited for transaction history tracking |
-| Validation | Rejects invalid input (e.g. negative amounts) at the DTO level |
+| Spring Web | REST API and server-rendered pages |
+| Spring Data JPA | Entity-Repository data access |
+| PostgreSQL Driver | Relational DB, well suited for transaction history |
+| Flyway | Versioned database migrations (`db/migration/V*.sql`), applied at startup |
+| Validation | Rejects invalid input at the DTO level |
 | Lombok | Removes boilerplate (getters/setters/constructors) |
 | Spring Boot Configuration Processor | Autocomplete for custom `application.yml` properties |
 | SpringDoc OpenAPI | Auto-generated API documentation |
-| Spring Boot Actuator | Health-check endpoint used by the deploy script to confirm the app is up |
+| Spring Boot Actuator | Health-check endpoint used by the deploy step |
 | Spring Boot DevTools | Auto-restart on code changes during development |
-| Flyway | Versioned database migrations (`db/migration/V*.sql`), applied at startup |
-| Testcontainers | Runs a real PostgreSQL in Docker for tests (the category queries are Postgres-only) |
+| Testcontainers | Runs a real PostgreSQL in Docker for tests (some queries are Postgres-only) |
 
 ## Key Design Decisions
 
-A few decisions worth calling out up front (full rationale for each will live in `docs/adr/` as the project progresses):
+Full notes in [docs/plan.md](docs/plan.md).
 
-- Recurring payments (insurance, subscriptions, gym membership) are normalized to a **weekly equivalent**, not monthly — the original spreadsheet tracked budget on a weekly basis, and normalizing to weeks keeps that consistent.
-- Categories separate **what was bought** (Groceries vs. Outside Food) from **why it was bought** (Essentials vs. Fashion) rather than forcing everything into a single "Luxury" catch-all, which made it hard to tell what was actually driving budget overruns.
-- Recurring payment amounts are tracked with a **history table**, so a price increase (e.g. gym membership going up) doesn't silently distort past budget calculations.
-- Frequently repeated transactions (same merchant) can be auto-categorized via a **merchant mapping table**, learned from past manual categorization — reducing repetitive manual entry without needing fuzzy matching.
+**Built**
+- **Two-level category tree** (group → item, e.g. Food → Grocery), seeded by migration, with duplicate names blocked per parent.
+- **Duplicate-safe imports**: each CSV line is stored as-is with an occurrence number (the 1st, 2nd… identical line in a file), so re-uploading the same export never creates duplicates, while two genuinely identical purchases on the same day are both kept.
+- **Cards belong to members**: the last 4 digits of the card in each row are mapped to a household member, so spending can be shown per person.
+- **Money as integer cents**, never floating point.
+- **Thin controllers, logic in services, DTOs out**: so the Thymeleaf pages can be replaced by React without touching the backend.
 
-## Deployment (set up, not yet tested)
+**Planned**
+- **Merchant matching**: bank descriptions are truncated (`Pak N Save F`, `Pak N Save M`), so aliases match by longest prefix, and corrections teach new aliases.
+- **Weekly normalisation** of recurring payments (insurance, subscriptions), because the original spreadsheet worked in weeks.
+- **Price history** for recurring payments, so a price increase doesn't distort past budgets.
 
-GCP Compute Engine VM (e2-micro) running Docker Compose. On every push to `main`, GitHub Actions runs the tests, builds a Docker image, pushes it to GitHub Container Registry and deploys it to the VM over SSH. VM setup: [docs/infra.md](docs/infra.md).
+## Deployment
+
+GCP Compute Engine VM (e2-micro) running Docker Compose, with the database on Neon. On every push to `main`, GitHub Actions runs the tests, builds a Docker image, pushes it to GitHub Container Registry and deploys it to the VM over SSH, then checks `/actuator/health`. Setup: [docs/infra.md](docs/infra.md).
 
 ## License
 
