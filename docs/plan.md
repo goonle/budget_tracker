@@ -101,6 +101,7 @@ Status: fixed, committed and verified by `./gradlew test` (2026-11-11).
 - **E0 Foundation & CI**: ~~fix the bugs~~, ~~`member_card` table (V2)~~, ~~repository tests~~, ~~deploy docs~~, ~~tests green~~, ~~first deploy~~ (done). Left: local run profile, tests on `postgres:18`.
 - **E1 Categories**: ~~tree, seed migration, `UNIQUE(parent_id, name)` (V3)~~, ~~`CategoryService`, `GET /api/categories` with tests~~ (done). Left: a category page (with E4).
 - **E2 CSV import**: sample CSV fixtures, a parser for each bank format (use a CSV library), line numbering, hashing, occurrence counting, staging tables, upload endpoint.
+  - [ ] (extension) Auto-detect bank: add `supports(headerLine)` to `BankCsvParser` and let ImportService pick the parser by header, when a second bank is added.
 - **E3 Merchant matching**: description normaliser, alias matcher (exact match, then longest prefix), merchant/alias admin, learning from corrections.
 - **E4 Review & save**: preview page, row editing, duplicate detection, continuity check, idempotent save.
 - **E5 Reports**: transaction list with category and subcategory filters, weekly summary like the spreadsheet, Goal/Net with a budget-goal history table, weekly normalisation of recurring payments.
