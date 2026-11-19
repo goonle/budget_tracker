@@ -1,7 +1,7 @@
 # Project plan & working notes
 
 Read this first when picking the project back up (human or AI).
-Last updated: 2026-11-12
+Last updated: 2026-11-19
 
 ## Working rules
 
@@ -90,28 +90,28 @@ Status: fixed, committed and verified by `./gradlew test` (2026-11-11).
 - [x] `./gradlew test` passes: 18 tests, Flyway V1–V3 on Postgres 17 (2026-11-11).
 - [x] Neon runs PostgreSQL 18 (V3 needs 15+ for `UNIQUE NULLS NOT DISTINCT`).
 - [x] CD works: push to `main` → test → image → deploy to the VM (2026-11-12).
-- [ ] Tests use `postgres:17` but Neon is 18. Switch tests to `postgres:18`, in one place (`TestcontainersConfiguration`).
+- [x] Tests use `postgres:18`, same as Neon (`TestcontainersConfiguration`).
 
 ### Known gaps (not fixed yet)
-- [ ] Local run: a `.env` exists (gitignored), but Spring Boot doesn't read `.env` by itself. It works when something loads it (the VS Code launch config's `envFile`, or `docker compose`). `./gradlew bootRun` won't see it.
+- [x] Local run: the VS Code launch config loads `.env` through `envFile`. (`./gradlew bootRun` still won't see it; use the launch config.)
 - [x] Deploy docs: `deploy/docker-compose.yml` and `deploy/.env.example` are in the repo, and the VM setup steps are in `docs/infra.md`.
 
 ## Roadmap (epics)
 
-- **E0 Foundation & CI**: ~~fix the bugs~~, ~~`member_card` table (V2)~~, ~~repository tests~~, ~~deploy docs~~, ~~tests green~~, ~~first deploy~~ (done). Left: local run profile, tests on `postgres:18`.
+- **E0 Foundation & CI**: ~~fix the bugs~~, ~~`member_card` table (V2)~~, ~~repository tests~~, ~~deploy docs~~, ~~tests green~~, ~~first deploy~~, ~~local run~~, ~~tests on `postgres:18`~~ (done).
 - **E1 Categories**: ~~tree, seed migration, `UNIQUE(parent_id, name)` (V3)~~, ~~`CategoryService`, `GET /api/categories` with tests~~ (done). Left: a category page (with E4).
-- **E2 CSV import**: sample CSV fixtures, a parser for each bank format (use a CSV library), line numbering, hashing, occurrence counting, staging tables, upload endpoint.
+- **E2 CSV import**: ~~`ParsedRow`, `BankCsvParser`, `AnzCsvParser` (Commons CSV) with tests~~ (format notes: `docs/csv-format.md`). Left: line hashing, occurrence counting, staging tables (V5), upload endpoint, card detection.
   - [ ] (extension) Auto-detect bank: add `supports(headerLine)` to `BankCsvParser` and let ImportService pick the parser by header, when a second bank is added.
 - **E3 Merchant matching**: description normaliser, alias matcher (exact match, then longest prefix), merchant/alias admin, learning from corrections.
 - **E4 Review & save**: preview page, row editing, duplicate detection, continuity check, idempotent save.
 - **E5 Reports**: transaction list with category and subcategory filters, weekly summary like the spreadsheet, Goal/Net with a budget-goal history table, weekly normalisation of recurring payments.
-- **E6 Accounts & security**: single-user mode first, then Spring Security with BCrypt. HTTPS on the VM before any real bank data goes on it.
+- **E6 Accounts & security**: ~~single-user mode (V4, `CurrentUser`)~~. Left: Spring Security with BCrypt. HTTPS on the VM before any real bank data goes on it.
 - **E7 Move to React**: replace `web/view` and the templates only.
 
 Planning board (private): https://claude.ai/artifact/P9GeXPsDUbH64YWBnGSXnR
 
 ## Open questions
 
-- Which bank's CSV format comes first?
+- ~~Which bank's CSV format comes first?~~ ANZ NZ (see `docs/csv-format.md`).
 - Is the occurrence-number rule above what was meant by checking that lines are continuous?
 - Should categories be shared by all users, or should each user have their own?
